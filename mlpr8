@@ -1,0 +1,131 @@
+
+# ==========================================================
+# Experiment: K-Means Clustering
+# Dataset: Iris Dataset
+# ==========================================================
+
+# Step 1: Set environment variable to avoid MKL warning
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+
+# Step 2: Import libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.datasets import load_iris
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+
+# Step 3: Load Iris Dataset
+iris = load_iris()
+
+X = pd.DataFrame(iris.data, columns=iris.feature_names)
+
+print("First Five Records:")
+print(X.head())
+
+print("\nDataset Shape:", X.shape)
+
+# Step 4: Apply Elbow Method
+wcss = []
+
+K = range(1, 11)
+
+for k in K:
+    kmeans = KMeans(
+        n_clusters=k,
+        random_state=42,
+        n_init=10
+    )
+
+    kmeans.fit(X)
+    wcss.append(kmeans.inertia_)
+
+# Step 5: Plot Elbow Curve
+plt.figure(figsize=(8, 5))
+
+plt.plot(K, wcss, marker='o')
+
+plt.title("Elbow Method")
+plt.xlabel("Number of Clusters")
+plt.ylabel("WCSS (Within Cluster Sum of Squares)")
+plt.xticks(K)
+plt.grid(True)
+
+plt.show()
+
+# Step 6: Calculate Silhouette Scores
+print("\nSilhouette Scores:")
+
+for k in range(2, 11):
+    model = KMeans(
+        n_clusters=k,
+        random_state=42,
+        n_init=10
+    )
+
+    labels = model.fit_predict(X)
+
+    score = silhouette_score(X, labels)
+
+    print("Clusters =", k,
+          "Silhouette Score =", round(score, 4))
+
+# Step 7: Train Final K-Means Model
+optimal_clusters = 3
+
+kmeans = KMeans(
+    n_clusters=optimal_clusters,
+    random_state=42,
+    n_init=10
+)
+
+clusters = kmeans.fit_predict(X)
+
+# Add cluster labels to dataset
+X['Cluster'] = clusters
+
+print("\nClustered Dataset:")
+print(X.head())
+
+# Step 8: Display Cluster Centers
+print("\nCluster Centers:")
+
+centers = pd.DataFrame(
+    kmeans.cluster_centers_,
+    columns=iris.feature_names
+)
+
+print(centers)
+
+# Step 9: Display Number of Samples in Each Cluster
+print("\nCluster Counts:")
+print(X['Cluster'].value_counts().sort_index())
+
+# Step 10: Visualize Clusters
+plt.figure(figsize=(8, 5))
+
+plt.scatter(
+    X.iloc[:, 0],
+    X.iloc[:, 2],
+    c=clusters,
+    cmap='viridis',
+    s=50
+)
+
+plt.scatter(
+    kmeans.cluster_centers_[:, 0],
+    kmeans.cluster_centers_[:, 2],
+    color='red',
+    marker='X',
+    s=200,
+    label='Centroids'
+)
+
+plt.title("K-Means Clustering on Iris Dataset")
+plt.xlabel("Sepal Length (cm)")
+plt.ylabel("Petal Length (cm)")
+plt.legend()
+plt.grid(True)
+
+plt.show()
